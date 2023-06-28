@@ -14,19 +14,21 @@ namespace MagicVilla_VillaAPI.Controllers
     {
         private readonly ILogging _logger;
         private readonly IVillaStoreRepository _villaRepository;
+        private readonly IMapper _mapper;
 
-        public VillaAPIController(ILogging logger, IVillaStoreRepository villaStoreRepository)
+        public VillaAPIController(ILogging logger, IVillaStoreRepository villaStoreRepository, IMapper mapper)
         {
             _logger = logger;
             _villaRepository = villaStoreRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Villa>>> GetAll()
+        public async Task<ActionResult<IEnumerable<VillaDTO>>> GetAll()
         {
             _logger.Log("Getting all villas", LogType.Information);
             var villas = await _villaRepository.GetAllVillas();
-            return Ok(villas);
+            return Ok(_mapper.Map<VillaDTO>(villas));
         }
 
         [HttpGet("{id}", Name ="GetVilla")]
