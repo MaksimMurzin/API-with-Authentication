@@ -55,7 +55,7 @@ namespace MagicVilla_VillaAPI.Repository
 
         public async Task<LocalUser> Register(RegistrationRequestDTO registrationRequest)
         {
-            var queryString = $"insert into Users (UserName, Password) values({registrationRequest.UserName}, {registrationRequest.Password})";
+            var queryString = $"insert into Users (UserName, Password, Name, Role) values({registrationRequest.UserName}, {registrationRequest.Password}, {registrationRequest.Name}, {registrationRequest.Role})";
 
             var connection = new SqlConnection(_connectionString);
             SqlCommand sqlCommand = new SqlCommand(queryString, connection);
