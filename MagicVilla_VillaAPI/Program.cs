@@ -1,6 +1,7 @@
 using MagicVilla_VillaAPI;
-using MagicVilla_VillaAPI.Data;
 using MagicVilla_VillaAPI.Logging;
+using MagicVilla_VillaAPI.Repository;
+using MagicVilla_VillaAPI.Repository.IRepository;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -23,6 +24,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ILogging, LoggingV2>();
 builder.Services.AddTransient<IVillaStoreRepository>(x => new VillaStoreRepository(villaStoreConnectionString));
+builder.Services.AddTransient<IUserRepository>(x=> new UserRepository(villaStoreConnectionString));
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 var app = builder.Build();
 
