@@ -2,16 +2,23 @@
 using MagicVilla_VillaAPI.Models.Dto;
 using MagicVilla_VillaAPI.Repository.IRepository;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace MagicVilla_VillaAPI.Repository
 {
     public class UserRepository : IUserRepository
     {
         private readonly string _connectionString;
+        private string secretKey;
 
-        public UserRepository(string connectionString)
+        public UserRepository(string connectionString, IConfiguration configuration)
         {
             _connectionString = connectionString;
+            secretKey = configuration.GetValue<string>("Jwt:Key");
         }
 
         public bool isUniqueUser(string username)
@@ -48,10 +55,51 @@ namespace MagicVilla_VillaAPI.Repository
 
         }
 
-        public Task<LoginResponseDTO> Login(LoginRequestDTO loginRequest)
+        public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequest)
         {
-            throw new NotImplementedException();
+            var queryString = $"select * from Users where (Username = '{loginRequest.UserName}') and (Password = '{loginRequest.Password}')";
+            var users = new List<LocalUser>();
+            var connection = new SqlConnection(_connectionString);
+            SqlCommand command = new SqlCommand(queryString,connection);
+            command.Connection.Open();
+            var reader = await command.ExecuteReaderAsync();
+            while (reader.Read())
+            {
+                var user = new LocalUser()
+                {
+                    UserName = (string)reader["Username"],
+                    Name = (string)reader["Name"],
+                    Password = (string)reader["Password"],
+                    Role = (string)reader["Role"]
+                };
+
+                users.Add(user);
+            }
+            command.Connection.Close();
+
+            // if we have more than one user we can't login, if we don't find any users we can't login
+            if((users.Count > 1) || (users.Count == 0) )  
+            {
+                throw new Exception("Invalid User");
+            }
+
+            var loginUser = users.First();
+            //if the user was found generate JWT Token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(secretKey);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, user.Id.ToString()),
+                    new Claim(ClaimTypes.Role, user.Role)
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials
+            };
         }
+
 
         public async Task<LocalUser> Register(RegistrationRequestDTO registrationRequest)
         {
